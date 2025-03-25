@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
+import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
@@ -21,7 +22,7 @@ public class App {
         try {// resources\logging.properties
             LogManager.getLogManager().readConfiguration(new FileInputStream("resources/logging.properties"));
         } catch (SecurityException | IOException e1) {
-            e1.printStackTrace();
+            Logger.getAnonymousLogger().log(Level.SEVERE, "Could not load logging configuration", e1);
         }
     }
 
@@ -38,7 +39,7 @@ public class App {
         if (wordleDatabaseConnection.checkIfConnectionDefined()) {
             System.out.println("Wordle created and connected.");
         } else {
-            System.out.println("Not able to connect. Sorry!");
+            logger.warning("Not able to connect. Sorry!");
             return;
         }
         if (wordleDatabaseConnection.createWordleTables()) {
@@ -50,18 +51,23 @@ public class App {
 
         // let's add some words to valid 4 letter words from the data.txt file
 
-        try (BufferedReader br = new BufferedReader(new FileReader("resources/data.txt"))) {
+        try (BufferedReader br = new BufferedReader(new FileReader("C:/G Studies/w05sqlinjectionpub-Joshua-Usi/resources/data.txt"))) {
             String line;
             int i = 1;
             while ((line = br.readLine()) != null) {
-                System.out.println(line);
-                wordleDatabaseConnection.addValidWord(i, line);
+                if (line.matches("^[a-z]{4}$")) {
+                    // logger.info(line);
+                    wordleDatabaseConnection.addValidWord(i, line);
+                    i++;
+                } else {
+                    logger.warning("Invalid word in data file: " + line);
+                }
                 i++;
             }
 
         } catch (IOException e) {
-            System.out.println("Not able to load . Sorry!");
-            System.out.println(e.getMessage());
+            logger.log(Level.WARNING, "Failed to load data file.", e);
+            System.out.println("Not able to load data. Sorry!");
             return;
         }
 
@@ -74,21 +80,23 @@ public class App {
             while (!guess.equals("q")) {
                 System.out.println("You've guessed '" + guess+"'.");
 
-                if (guess.length() == 4 && guess.matches("[a-z]")) {
+                // THis is ugly af but whatever
+                if (guess.matches("^[a-z]{4}$")) {
                     if (wordleDatabaseConnection.isValidWord(guess)) { 
                         System.out.println("Success! It is in the the list.\n");
                     }else{
                         System.out.println("Sorry. This word is NOT in the the list.\n");
                     }
                 } else {
-                    System.out.println("Unacceptable imput. Input must be 4 lowercase alpha characters.\n");
+                    System.out.println("Unacceptable input. Input must be 4 lowercase alpha characters.\n");
+                    logger.warning("Invalid guess entered: " + guess);
                 }
 
                 System.out.print("Enter a 4 letter word for a guess or q to quit: " );
                 guess = scanner.nextLine();
             }
         } catch (NoSuchElementException | IllegalStateException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Error reading user input.", e);
         }
 
     }
