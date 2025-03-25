@@ -1,5 +1,6 @@
 package workshop05code;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -8,11 +9,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-
-//Import for logging exercise
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
@@ -145,10 +141,11 @@ public class SQLiteConnectionManager {
      * @return true if guess exists in the database, false otherwise
      */
     public boolean isValidWord(String guess) {
-        String sql = "SELECT count(id) as total FROM validWords WHERE word like'" + guess + "';";
+        String sql = "SELECT count(id) as total FROM validWords WHERE word like ?;";
 
         try (Connection conn = DriverManager.getConnection(databaseURL);
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, guess);
 
             ResultSet resultRows = stmt.executeQuery();
             if (resultRows.next()) {
